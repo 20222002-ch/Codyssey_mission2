@@ -186,37 +186,53 @@ def show_best_score(best_score):
     print(f"\n최고 점수: {score:g}점")
     print(f"기록: {total}문제 중 {correct_count}문제 정답")
 
+class QuizGame:
+    def __init__(self):
+        self.quizzes = create_default_quizzes()
+        self.best_score = None
+
+    def play(self):
+        result = play_quizzes(self.quizzes)
+
+        if result is None:
+            return
+
+        if (
+            self.best_score is None
+            or result["score"] > self.best_score["score"]
+        ):
+            self.best_score = result
+            print("새로운 최고 점수입니다!")
+
+    def add_quiz(self):
+        add_quiz(self.quizzes)
+
+    def show_quiz_list(self):
+        show_quiz_list(self.quizzes)
+
+    def show_best_score(self):
+        show_best_score(self.best_score)
+
+    def run(self):
+        while True:
+            show_menu()
+            choice = read_menu_choice()
+
+            if choice == 1:
+                self.play()
+            elif choice == 2:
+                self.add_quiz()
+            elif choice == 3:
+                self.show_quiz_list()
+            elif choice == 4:
+                self.show_best_score()
+            elif choice == 5:
+                print("퀴즈 게임을 종료합니다.")
+                break
+
 def main():
-    quizzes = create_default_quizzes()
-    best_score = None
-
-    while True:
-        show_menu()
-        choice = read_menu_choice()
-
-        if choice == 1:
-            result = play_quizzes(quizzes)
-
-            if result is not None:
-                if (
-                    best_score is None
-                    or result["score"] > best_score["score"]
-                ):
-                    best_score = result
-                    print("새로운 최고 점수입니다!")
-
-        elif choice == 2:
-            add_quiz(quizzes)
-
-        elif choice == 3:
-            show_quiz_list(quizzes)
-
-        elif choice == 4:
-            show_best_score(best_score)
-
-        elif choice == 5:
-            print("퀴즈 게임을 종료합니다.")
-            break
+    game = QuizGame()
+    game.run()
 
 
 if __name__ == "__main__":
