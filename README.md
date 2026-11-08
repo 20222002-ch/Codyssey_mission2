@@ -349,6 +349,54 @@ Codyssey_mission2/
 
 `state.tmp`는 저장 시 사용하는 임시 파일이다. 캐시, 가상환경, 임시 파일과 `state.backup.json`은 Git 관리에서 제외한다.
 
+## 요구사항 변경 시 수정 가이드
+
+### 수정 대상 파일과 관련 함수·메서드 매핑
+
+게임 구현은 [`main.py`](main.py)에 있다. 아래 표는 요구사항이 바뀌었을 때 **어느 파일의 어느 함수·메서드를 먼저 수정하고, 무엇을 함께 확인해야 하는지** 정리한 변경 매뉴얼이다. `QuizGame.add_quiz()` 같은 클래스 메서드와 `add_quiz()` 같은 파일 수준 함수는 서로 다른 수정 대상이다.
+
+| 변경할 요구사항 | 수정 대상 파일 | 관련 함수·메서드·상수 | 함께 확인할 영향 범위 |
+| --- | --- | --- | --- |
+| 메뉴 항목·번호 추가 또는 변경 | `main.py` | `show_menu()`, `read_menu_choice()`, `QuizGame.run()` | 표시 문구, 허용 번호 범위, 실제 실행 분기를 함께 변경. 기존 5번 종료 동작과 README 기능 목록 확인 |
+| 기본 문제·주제 변경 | `main.py` | `create_default_quizzes()`, `QuizGame.parse_state()` | 문제·선택지·정답·힌트를 함께 검토. 기본 힌트는 문제 문장으로 연결되며 기존 `state.json`이 있으면 저장된 문제가 우선됨 |
+| 퀴즈 속성 추가 또는 선택지 수 변경 | `main.py` | `Quiz.__init__()`, `Quiz.display()`, `Quiz.check_answer()`, `create_default_quizzes()`, `add_quiz()`, `read_answer()`, `read_quiz_answer()`, `QuizGame.parse_state()`, `QuizGame.save_state()` | 입력, 객체 생성, 정답 범위, JSON 읽기·쓰기를 함께 맞춤. 기존 파일에서 새 속성이 없을 때의 기본값과 README 스키마 확인 |
+| 문제 등록 흐름 변경 | `main.py` | `read_non_empty_text()`, `read_answer()`, `add_quiz()`, `QuizGame.add_quiz()` | 모든 입력 완료 후 등록되는지, 취소된 문제가 남지 않는지, 등록 직후 저장되는지 확인 |
+| 목록 표시 방식 변경 | `main.py` | `show_quiz_list()`, `QuizGame.show_quiz_list()`, `QuizGame.delete_quiz()` | 삭제에서도 같은 목록을 사용하므로 화면의 번호와 실제 삭제 인덱스가 일치하는지 확인 |
+| 출제 수·랜덤 출제 방식 변경 | `main.py` | `read_number()`, `play_quizzes()`, `QuizGame.play()` | 빈 목록, 시작 취소, 중복 출제, 원본 목록 순서, 결과의 `total` 확인. 히스토리의 문제 수와 점수 분모도 함께 확인 |
+| 힌트 입력·조회 방식 변경 | `main.py` | `Quiz.__init__()`, `create_default_quizzes()`, `add_quiz()`, `read_quiz_answer()`, `play_quizzes()` | 힌트 없음·반복 조회·중간 취소 처리와 `hints_used` 집계, JSON의 `hint` 호환 확인 |
+| 점수 계산·힌트 감점 변경 | `main.py` | `HINT_PENALTY`, `calculate_score()`, `play_quizzes()`, `QuizGame.play()`, `QuizGame.parse_record()`, `show_best_score()`, `QuizGame.show_history()` | 계산·표시·최고 기록 비교뿐 아니라 저장된 `hint_penalty` 검증도 확인. 과거 기록의 감점 기준을 새 기준으로 덮어쓰지 않음 |
+| 최고 기록 갱신 기준 변경 | `main.py` | `QuizGame.play()`, `show_best_score()`, `QuizGame.show_best_score()`, `QuizGame.parse_record()` | 미플레이 `None`, 실제 0점, 동점 처리, 정답 수·문제 수·감점 기준과 점수의 일관성 확인 |
+| 삭제·확인·취소 방식 변경 | `main.py` | `QuizGame.delete_quiz()`, `read_number()`, `show_quiz_list()`, `QuizGame.save_state()` | y/n 확인, 0 취소, 마지막 문제 삭제, 저장 실패 시 원래 위치 복원, 과거 점수 보존 확인 |
+| 히스토리 항목·정렬·날짜 형식 변경 | `main.py` | `QuizGame.play()`, `QuizGame.show_history()`, `QuizGame.parse_record()`, `QuizGame.parse_state()`, `QuizGame.save_state()` | 새 기록 생성·조회·불러오기·저장 모두 반영. 시간대와 누락 필드의 호환, 완료한 게임만 기록되는지 확인 |
+| 파일 경로·JSON 키·스키마·오류 복구 변경 | `main.py` | `QuizGame.__init__()`, `QuizGame.load_state()`, `QuizGame.parse_state()`, `QuizGame.parse_record()`, `QuizGame.save_state()`, `main()` | UTF-8, 프로젝트 루트 경로, 임시 파일 교체, 누락·손상·읽기·쓰기 오류, 종료 시 저장과 구형 파일 복원 확인 |
+| 입력 검증·안전한 종료 변경 | `main.py` | `read_menu_choice()`, `read_answer()`, `read_number()`, `read_non_empty_text()`, `read_quiz_answer()`, `main()`과 파일 끝의 예외 처리 | 공백·빈 입력·문자·범위 밖 숫자, Ctrl+C·EOF, 미완성 문제·미완료 게임 제외와 `finally` 저장 확인 |
+| 자동 검증·재현 로그 변경 | `docs/verification/test_bonus.py`, `docs/verification/verify.py` | `QuizTests`의 관련 `test_*()` 메서드, `session()`, `create_demo_logs()`, `main()` | 새 프롬프트에 맞는 입력 순서와 기대 결과 수정. 실제 프로세스 테스트 및 원본 데이터 보존 확인, 필요한 로그만 재생성 |
+| 로그 창·실행 증거 변경 | `docs/verification/view_log.py`, `README.md`, `docs/screenshots/` | 뷰어의 `main()`, README 이미지 위 실행 명령과 상대 경로 | 읽기 전용·스크롤 동작, 파일 존재, 이미지와 로그의 버전 일치 확인. 로그를 생성해도 이미지는 자동 갱신되지 않음 |
+
+`state.json`은 실행 중 생성·갱신되는 사용자 데이터다. 요구사항 변경을 적용하기 위해 기록을 일괄 삭제하거나 직접 덮어쓰지 않고, 위 읽기·검증·저장 메서드에서 구형 데이터의 기본값 또는 변환 규칙을 마련한다. `docs/verification/results.json`과 `bonus-*.txt`도 검증 실행기가 만드는 결과 파일이며 수동으로 통과 결과를 작성하지 않는다.
+
+### 변경 영향 범위를 줄이는 작업 절차
+
+1. **변경 전 확인:** `git status`와 현재 실행 결과를 확인하고, 사용자 데이터가 필요한 경우 `state.json`을 `state.backup.json`으로 복사한다. 백업은 Git에서 제외한다.
+2. **수정 범위 선택:** 위 표에서 해당 요구사항의 파일과 함수·메서드를 고른다. 입력 → 객체 → 게임 진행 → 저장·복원 → 출력 순서로 연결된 부분을 확인하고, 관련 없는 기능은 수정 범위에서 제외한다.
+3. **기존 동작 보호:** 관련 회귀 테스트를 먼저 확인하고 새 기준의 기대값을 정한다. 데이터 필드나 점수 기준이 바뀌면 구형 저장 파일과 새 파일을 모두 읽는 테스트를 포함한다.
+4. **작업 브랜치에서 수정:** 하나의 요구사항 변경을 한 작업 단위로 구현한다. 문구만 바뀌는 경우에는 계산·저장 구조를 바꾸지 않는다. 저장 구조가 바뀌면 `parse_state()`·`parse_record()`·`save_state()`를 함께 점검한다.
+5. **검증:** 아래 명령으로 41개 회귀 테스트를 실행한다. 이 명령은 로그·이미지를 다시 만들지 않고 임시 폴더에서 게임을 검사한다. 잘못된 입력, 취소, EOF, 재실행과 기존 기록 보존도 확인한다.
+
+   ```powershell
+   py -m unittest discover -s docs/verification -p test_bonus.py -v
+   ```
+
+6. **설명과 증거 동기화:** README의 기능 목록·필드 설명·사용법을 실제 동작에 맞춘다. 실행 결과가 바뀌면 `py docs/verification/verify.py`로 결과와 보너스 로그를 갱신하고 해당 스크린샷도 다시 촬영한다. 이전 개발 기록은 당시 버전임을 표시해 보존한다.
+7. **커밋과 병합:** `git diff`와 `git diff --check`로 변경을 확인하고 수정한 파일만 스테이징한다. 위 커밋 규칙에 맞춰 기록한 뒤 병합·푸시하고 GitHub의 README 링크와 파일 반영을 확인한다.
+
+### 변경 예시: 힌트 감점 10점에서 5점으로 조정
+
+- **변경한 코드:** `main.py`의 `HINT_PENALTY`와 `calculate_score()`를 기준으로 새 게임 점수를 계산하고, `play_quizzes()`의 반환값에 `hint_penalty`를 저장했다. `QuizGame.parse_record()`는 새 5점 기준과 예전 10점 기준을 구분해 검증하도록 변경했다.
+- **유지한 동작:** `QuizGame.play()`의 최고 점수 비교와 히스토리 저장 흐름을 확인하되, 기존 사용자 문제·날짜·점수를 소급 수정하지 않았다. `show_best_score()`·`QuizGame.show_history()`는 저장된 점수를 그대로 표시한다.
+- **검증한 위치:** `docs/verification/test_bonus.py`의 `test_hint_scoring_and_zero_floor()`, `test_hint_repeated_once_and_case_insensitive()`, `test_hint_penalty_and_history_survive_restart()`, `test_old_ten_point_records_and_new_five_point_records_coexist()`에서 계산·중복 조회·재실행·구형 기록 호환을 확인했다.
+- **함께 갱신한 파일:** `README.md`, `docs/verification/results.json`, 영향을 받는 `bonus-*.txt`, `docs/screenshots/bonus-*.jpg`를 맞췄다. 게임과 무관한 로그 뷰어 코드는 수정할 필요가 없었다.
+
 ## 데이터 파일 설명
 
 - **경로:** `main.py`와 같은 프로젝트 루트의 `state.json`
