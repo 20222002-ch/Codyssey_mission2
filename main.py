@@ -13,6 +13,35 @@ class Quiz:
     def check_answer(self, user_answer):
         return user_answer == self.answer
 
+def create_default_quizzes():
+    return [
+        Quiz(
+            question="Python에서 문자열을 나타내는 자료형은?",
+            choices=["int", "str", "bool", "list"],
+            answer=2,
+        ),
+        Quiz(
+            question="Python에서 조건에 따라 실행할 코드를 나누는 키워드는?",
+            choices=["for", "return", "if", "def"],
+            answer=3,
+        ),
+        Quiz(
+            question="Python에서 함수를 정의하는 키워드는?",
+            choices=["def", "class", "while", "import"],
+            answer=1,
+        ),
+        Quiz(
+            question="다음 중 Python의 불리언 값은?",
+            choices=['"hello"', "42", "[1, 2]", "True"],
+            answer=4,
+        ),
+        Quiz(
+            question="Python에서 리스트의 첫 번째 요소의 인덱스는?",
+            choices=["1", "0", "-1", "2"],
+            answer=2,
+        ),
+    ]
+
 def show_menu():
     print("\n========================================")
     print("          나만의 퀴즈 게임")
