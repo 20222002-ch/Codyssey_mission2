@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 class Quiz:
     def __init__(self, question, choices, answer):
         self.question = question
@@ -188,8 +191,132 @@ def show_best_score(best_score):
 
 class QuizGame:
     def __init__(self):
+        self.state_path = Path(__file__).resolve().parent / "state.json"
         self.quizzes = create_default_quizzes()
         self.best_score = None
+        self.load_state()
+
+    def parse_state(self, data):
+        if not isinstance(data, dict):
+            raise ValueError("저장 데이터는 객체 형태여야 합니다.")
+
+        quiz_data = data["quizzes"]
+        best_score = data["best_score"]
+
+        if not isinstance(quiz_data, list):
+            raise ValueError("퀴즈 목록 형식이 올바르지 않습니다.")
+
+        quizzes = []
+
+        for item in quiz_data:
+            if not isinstance(item, dict):
+                raise ValueError("퀴즈 데이터 형식이 올바르지 않습니다.")
+
+            question = item["question"]
+            choices = item["choices"]
+            answer = item["answer"]
+
+            if not isinstance(question, str) or not question.strip():
+                raise ValueError("문제 내용이 올바르지 않습니다.")
+
+            if not isinstance(choices, list) or len(choices) != 4:
+                raise ValueError("선택지는 4개여야 합니다.")
+
+            if any(
+                not isinstance(choice, str) or not choice.strip()
+                for choice in choices
+            ):
+                raise ValueError("선택지 내용이 올바르지 않습니다.")
+
+            if type(answer) is not int or not 1 <= answer <= 4:
+                raise ValueError("정답 번호가 올바르지 않습니다.")
+
+            quizzes.append(Quiz(question, choices, answer))
+
+        if best_score is not None:
+            if not isinstance(best_score, dict):
+                raise ValueError("최고 기록 형식이 올바르지 않습니다.")
+
+            score = best_score["score"]
+            correct_count = best_score["correct_count"]
+            total = best_score["total"]
+
+            if type(total) is not int or total < 1:
+                raise ValueError("전체 문제 수가 올바르지 않습니다.")
+
+            if (
+                type(correct_count) is not int
+                or not 0 <= correct_count <= total
+            ):
+                raise ValueError("정답 수가 올바르지 않습니다.")
+
+            if type(score) not in (int, float) or not 0 <= score <= 100:
+                raise ValueError("점수가 올바르지 않습니다.")
+
+            if score != round(correct_count / total * 100, 2):
+                raise ValueError("점수와 정답 수가 일치하지 않습니다.")
+
+        return quizzes, best_score
+
+    def load_state(self):
+        try:
+            with self.state_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+
+            quizzes, best_score = self.parse_state(data)
+
+        except FileNotFoundError:
+            print("저장 파일이 없어 기본 퀴즈로 시작합니다.")
+            return
+
+        except (ValueError, KeyError, TypeError):
+            print("저장 파일이 손상되었거나 형식이 올바르지 않습니다.")
+            print("기본 퀴즈와 초기 점수로 시작합니다.")
+            return
+
+        except (OSError, UnicodeError) as error:
+            print(f"저장 파일을 읽을 수 없습니다: {error}")
+            print("기본 퀴즈와 초기 점수로 시작합니다.")
+            return
+
+        self.quizzes = quizzes
+        self.best_score = best_score
+
+        print(f"저장 데이터를 불러왔습니다. 퀴즈 {len(self.quizzes)}개")
+
+    def save_state(self):
+        data = {
+            "quizzes": [
+                {
+                    "question": quiz.question,
+                    "choices": quiz.choices,
+                    "answer": quiz.answer,
+                }
+                for quiz in self.quizzes
+            ],
+            "best_score": self.best_score,
+        }
+
+        temp_path = self.state_path.with_suffix(".tmp")
+
+        try:
+            with temp_path.open("w", encoding="utf-8") as file:
+                json.dump(
+                    data,
+                    file,
+                    ensure_ascii=False,
+                    indent=4,
+                    allow_nan=False,
+                )
+
+            temp_path.replace(self.state_path)
+
+        except OSError as error:
+            print(f"데이터를 저장하지 못했습니다: {error}")
+            return False
+
+        print("데이터를 저장했습니다.")
+        return True
 
     def play(self):
         result = play_quizzes(self.quizzes)
@@ -204,8 +331,11 @@ class QuizGame:
             self.best_score = result
             print("새로운 최고 점수입니다!")
 
+        self.save_state()
+
     def add_quiz(self):
         add_quiz(self.quizzes)
+        self.save_state()
 
     def show_quiz_list(self):
         show_quiz_list(self.quizzes)
@@ -232,7 +362,11 @@ class QuizGame:
 
 def main():
     game = QuizGame()
-    game.run()
+
+    try:
+        game.run()
+    finally:
+        game.save_state()
 
 
 if __name__ == "__main__":
