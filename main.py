@@ -2,11 +2,19 @@ import json
 import random
 from pathlib import Path
 
+HINT_PENALTY = 10
+
+
+def calculate_score(correct_count, total, hints_used=0):
+    return max(0, round(correct_count / total * 100 - hints_used * HINT_PENALTY, 2))
+
+
 class Quiz:
-    def __init__(self, question, choices, answer):
+    def __init__(self, question, choices, answer, hint=""):
         self.question = question
         self.choices = choices
         self.answer = answer
+        self.hint = hint
 
     def display(self):
         print(self.question)
@@ -23,26 +31,31 @@ def create_default_quizzes():
             question="Python에서 문자열을 나타내는 자료형은?",
             choices=["int", "str", "bool", "list"],
             answer=2,
+            hint="텍스트를 표현하는 자료형이며 string의 약자입니다.",
         ),
         Quiz(
             question="Python에서 조건에 따라 실행할 코드를 나누는 키워드는?",
             choices=["for", "return", "if", "def"],
             answer=3,
+            hint="조건이 참일 때 실행할 코드를 지정하는 키워드입니다.",
         ),
         Quiz(
             question="Python에서 함수를 정의하는 키워드는?",
             choices=["def", "class", "while", "import"],
             answer=1,
+            hint="define에서 유래한 세 글자 키워드입니다.",
         ),
         Quiz(
             question="다음 중 Python의 불리언 값은?",
             choices=['"hello"', "42", "[1, 2]", "True"],
             answer=4,
+            hint="참과 거짓은 따옴표 없이 쓰며 첫 글자는 대문자입니다.",
         ),
         Quiz(
             question="Python에서 리스트의 첫 번째 요소의 인덱스는?",
             choices=["1", "0", "-1", "2"],
             answer=2,
+            hint="리스트의 인덱스는 첫 위치를 0으로 셉니다.",
         ),
     ]
 
@@ -109,6 +122,31 @@ def read_number(prompt, minimum, maximum):
         print(f"{minimum}~{maximum} 사이의 번호를 선택해주세요.")
 
 
+def read_quiz_answer(quiz):
+    used_hint = False
+    while True:
+        text = input("정답 번호 (1~4, h: 힌트): ").strip().lower()
+        if text == "h":
+            if not quiz.hint:
+                print("이 문제에는 등록된 힌트가 없습니다. 감점하지 않습니다.")
+            else:
+                print(f"힌트: {quiz.hint}")
+                if not used_hint:
+                    print(f"이 문제의 힌트 사용으로 최종 점수에서 {HINT_PENALTY}점 차감됩니다.")
+                else:
+                    print("이미 확인한 힌트입니다. 추가 감점은 없습니다.")
+                used_hint = True
+            continue
+        try:
+            answer = int(text)
+        except ValueError:
+            print("1~4 사이의 숫자 또는 h를 입력해주세요.")
+            continue
+        if 1 <= answer <= 4:
+            return answer, used_hint
+        print("1~4 사이의 번호를 선택해주세요.")
+
+
 def play_quizzes(quizzes):
     if not quizzes:
         print("등록된 퀴즈가 없습니다.")
@@ -121,6 +159,7 @@ def play_quizzes(quizzes):
 
     selected_quizzes = random.sample(quizzes, total)
     correct_count = 0
+    hints_used = 0
 
     print(f"\n퀴즈를 시작합니다! 총 {total}문제입니다.")
 
@@ -129,7 +168,8 @@ def play_quizzes(quizzes):
         print(f"[문제 {number}]")
         quiz.display()
 
-        user_answer = read_answer()
+        user_answer, used_hint = read_quiz_answer(quiz)
+        hints_used += int(used_hint)
 
         if quiz.check_answer(user_answer):
             print("정답입니다!")
@@ -137,17 +177,19 @@ def play_quizzes(quizzes):
         else:
             print(f"오답입니다. 정답은 {quiz.answer}번입니다.")
 
-    score = round(correct_count / total * 100, 2)
+    score = calculate_score(correct_count, total, hints_used)
 
     print("\n========================================")
     print(f"결과: {total}문제 중 {correct_count}문제 정답!")
     print(f"점수: {score:g}점")
+    print(f"힌트 사용: {hints_used}회 (회당 {HINT_PENALTY}점 차감, 최소 0점)")
     print("========================================")
 
     return {
         "score": score,
         "correct_count": correct_count,
         "total": total,
+        "hints_used": hints_used,
     }
 
 def read_non_empty_text(prompt):
@@ -171,11 +213,13 @@ def add_quiz(quizzes):
         choices.append(choice)
 
     answer = read_answer()
+    hint = input("힌트 (선택 사항, Enter: 없음): ").strip()
 
     quiz = Quiz(
         question=question,
         choices=choices,
         answer=answer,
+        hint=hint,
     )
 
     quizzes.append(quiz)
@@ -207,6 +251,7 @@ def show_best_score(best_score):
 
     print(f"\n최고 점수: {score:g}점")
     print(f"기록: {total}문제 중 {correct_count}문제 정답")
+    print(f"힌트 사용: {best_score.get('hints_used', 0)}회")
 
 class QuizGame:
     def __init__(self):
@@ -234,6 +279,8 @@ class QuizGame:
             question = item["question"]
             choices = item["choices"]
             answer = item["answer"]
+            default_hints = {q.question: q.hint for q in create_default_quizzes()}
+            hint = item.get("hint", default_hints.get(question, "")) if isinstance(question, str) else ""
 
             if not isinstance(question, str) or not question.strip():
                 raise ValueError("문제 내용이 올바르지 않습니다.")
@@ -250,7 +297,10 @@ class QuizGame:
             if type(answer) is not int or not 1 <= answer <= 4:
                 raise ValueError("정답 번호가 올바르지 않습니다.")
 
-            quizzes.append(Quiz(question, choices, answer))
+            if not isinstance(hint, str):
+                raise ValueError("힌트 형식이 올바르지 않습니다.")
+
+            quizzes.append(Quiz(question, choices, answer, hint))
 
         if best_score is not None:
             if not isinstance(best_score, dict):
@@ -259,6 +309,7 @@ class QuizGame:
             score = best_score["score"]
             correct_count = best_score["correct_count"]
             total = best_score["total"]
+            hints_used = best_score.get("hints_used", 0)
 
             if type(total) is not int or total < 1:
                 raise ValueError("전체 문제 수가 올바르지 않습니다.")
@@ -272,7 +323,10 @@ class QuizGame:
             if type(score) not in (int, float) or not 0 <= score <= 100:
                 raise ValueError("점수가 올바르지 않습니다.")
 
-            if score != round(correct_count / total * 100, 2):
+            if type(hints_used) is not int or not 0 <= hints_used <= total:
+                raise ValueError("힌트 사용 횟수가 올바르지 않습니다.")
+
+            if score != calculate_score(correct_count, total, hints_used):
                 raise ValueError("점수와 정답 수가 일치하지 않습니다.")
 
         return quizzes, best_score
@@ -310,6 +364,7 @@ class QuizGame:
                     "question": quiz.question,
                     "choices": quiz.choices,
                     "answer": quiz.answer,
+                    "hint": quiz.hint,
                 }
                 for quiz in self.quizzes
             ],
