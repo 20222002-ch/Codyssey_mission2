@@ -1,6 +1,7 @@
 import json
 import random
 from pathlib import Path
+from datetime import datetime
 
 HINT_PENALTY = 10
 
@@ -68,6 +69,8 @@ def show_menu():
     print("3. 퀴즈 목록")
     print("4. 점수 확인")
     print("5. 종료")
+    print("6. 퀴즈 삭제")
+    print("7. 점수 히스토리")
     print("========================================")
 
 
@@ -82,13 +85,13 @@ def read_menu_choice():
         try:
             choice = int(user_input)
         except ValueError:
-            print("1~5 사이의 숫자를 입력해주세요.")
+            print("1~7 사이의 숫자를 입력해주세요.")
             continue
 
-        if 1 <= choice <= 5:
+        if 1 <= choice <= 7:
             return choice
 
-        print("1~5 사이의 번호를 선택해주세요.")
+        print("1~7 사이의 번호를 선택해주세요.")
 
 def read_answer():
     while True:
@@ -258,6 +261,7 @@ class QuizGame:
         self.state_path = Path(__file__).resolve().parent / "state.json"
         self.quizzes = create_default_quizzes()
         self.best_score = None
+        self.history = []
         self.load_state()
 
     def parse_state(self, data):
@@ -271,6 +275,7 @@ class QuizGame:
             raise ValueError("퀴즈 목록 형식이 올바르지 않습니다.")
 
         quizzes = []
+        default_hints = {q.question: q.hint for q in create_default_quizzes()}
 
         for item in quiz_data:
             if not isinstance(item, dict):
@@ -279,7 +284,6 @@ class QuizGame:
             question = item["question"]
             choices = item["choices"]
             answer = item["answer"]
-            default_hints = {q.question: q.hint for q in create_default_quizzes()}
             hint = item.get("hint", default_hints.get(question, "")) if isinstance(question, str) else ""
 
             if not isinstance(question, str) or not question.strip():
@@ -303,40 +307,50 @@ class QuizGame:
             quizzes.append(Quiz(question, choices, answer, hint))
 
         if best_score is not None:
-            if not isinstance(best_score, dict):
-                raise ValueError("최고 기록 형식이 올바르지 않습니다.")
+            best_score = self.parse_record(best_score)
 
-            score = best_score["score"]
-            correct_count = best_score["correct_count"]
-            total = best_score["total"]
-            hints_used = best_score.get("hints_used", 0)
+        history_data = data.get("history", [])
+        if not isinstance(history_data, list):
+            raise ValueError("점수 히스토리 형식이 올바르지 않습니다.")
+        history = [self.parse_record(record, require_date=True) for record in history_data]
 
-            if type(total) is not int or total < 1:
-                raise ValueError("전체 문제 수가 올바르지 않습니다.")
+        return quizzes, best_score, history
 
-            if (
-                type(correct_count) is not int
-                or not 0 <= correct_count <= total
-            ):
-                raise ValueError("정답 수가 올바르지 않습니다.")
+    def parse_record(self, record, require_date=False):
+        if not isinstance(record, dict):
+            raise ValueError("점수 기록 형식이 올바르지 않습니다.")
+        score = record["score"]
+        correct_count = record["correct_count"]
+        total = record["total"]
+        hints_used = record.get("hints_used", 0)
 
-            if type(score) not in (int, float) or not 0 <= score <= 100:
-                raise ValueError("점수가 올바르지 않습니다.")
+        if type(total) is not int or total < 1:
+            raise ValueError("전체 문제 수가 올바르지 않습니다.")
+        if type(correct_count) is not int or not 0 <= correct_count <= total:
+            raise ValueError("정답 수가 올바르지 않습니다.")
+        if type(score) not in (int, float) or not 0 <= score <= 100:
+            raise ValueError("점수가 올바르지 않습니다.")
+        if type(hints_used) is not int or not 0 <= hints_used <= total:
+            raise ValueError("힌트 사용 횟수가 올바르지 않습니다.")
+        if score != calculate_score(correct_count, total, hints_used):
+            raise ValueError("점수와 정답 수가 일치하지 않습니다.")
 
-            if type(hints_used) is not int or not 0 <= hints_used <= total:
-                raise ValueError("힌트 사용 횟수가 올바르지 않습니다.")
-
-            if score != calculate_score(correct_count, total, hints_used):
-                raise ValueError("점수와 정답 수가 일치하지 않습니다.")
-
-        return quizzes, best_score
+        parsed = dict(score=score, correct_count=correct_count, total=total, hints_used=hints_used)
+        if require_date:
+            played_at = record["played_at"]
+            if not isinstance(played_at, str):
+                raise ValueError("게임 기록 날짜가 올바르지 않습니다.")
+            if datetime.fromisoformat(played_at).utcoffset() is None:
+                raise ValueError("게임 기록 날짜에 시간대가 필요합니다.")
+            parsed["played_at"] = played_at
+        return parsed
 
     def load_state(self):
         try:
             with self.state_path.open("r", encoding="utf-8") as file:
                 data = json.load(file)
 
-            quizzes, best_score = self.parse_state(data)
+            quizzes, best_score, history = self.parse_state(data)
 
         except FileNotFoundError:
             print("저장 파일이 없어 기본 퀴즈로 시작합니다.")
@@ -354,6 +368,7 @@ class QuizGame:
 
         self.quizzes = quizzes
         self.best_score = best_score
+        self.history = history
 
         print(f"저장 데이터를 불러왔습니다. 퀴즈 {len(self.quizzes)}개")
 
@@ -369,6 +384,7 @@ class QuizGame:
                 for quiz in self.quizzes
             ],
             "best_score": self.best_score,
+            "history": self.history,
         }
 
         temp_path = self.state_path.with_suffix(".tmp")
@@ -398,6 +414,11 @@ class QuizGame:
         if result is None:
             return
 
+        self.history.append({
+            **result,
+            "played_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        })
+
         if (
             self.best_score is None
             or result["score"] > self.best_score["score"]
@@ -417,6 +438,43 @@ class QuizGame:
     def show_best_score(self):
         show_best_score(self.best_score)
 
+    def delete_quiz(self):
+        if not self.quizzes:
+            print("등록된 퀴즈가 없습니다.")
+            return
+        self.show_quiz_list()
+        number = read_number(f"삭제할 문제 번호 (1~{len(self.quizzes)}, 0: 취소): ", 0, len(self.quizzes))
+        if number == 0:
+            print("삭제를 취소했습니다.")
+            return
+        quiz = self.quizzes[number - 1]
+        print(f"삭제할 문제: {quiz.question}")
+        while True:
+            confirmation = input("이 문제를 삭제할까요? (y/n): ").strip().lower()
+            if confirmation in ("y", "n"):
+                break
+            print("y 또는 n을 입력해주세요.")
+        if confirmation == "n":
+            print("삭제를 취소했습니다.")
+            return
+        self.quizzes.pop(number - 1)
+        if self.save_state():
+            print("퀴즈를 삭제했습니다. 기존 점수 기록은 유지됩니다.")
+        else:
+            self.quizzes.insert(number - 1, quiz)
+            print("저장 실패로 삭제를 취소하고 문제를 복원했습니다.")
+
+    def show_history(self):
+        if not self.history:
+            print("아직 완료한 게임 기록이 없습니다.")
+            return
+        print(f"\n점수 히스토리 (총 {len(self.history)}회, 최신순)")
+        for number, record in enumerate(reversed(self.history), start=1):
+            played_at = datetime.fromisoformat(record["played_at"]).isoformat(sep=" ")
+            print(f"[{number}] {played_at} | {record['total']}문제 중 "
+                  f"{record['correct_count']}개 정답 | {record['score']:g}점 | "
+                  f"힌트 {record['hints_used']}회")
+
     def run(self):
         while True:
             show_menu()
@@ -433,6 +491,10 @@ class QuizGame:
             elif choice == 5:
                 print("퀴즈 게임을 종료합니다.")
                 break
+            elif choice == 6:
+                self.delete_quiz()
+            elif choice == 7:
+                self.show_history()
 
 def main():
     game = QuizGame()
