@@ -148,6 +148,55 @@ py docs/verification/verify.py
 
 로그 텍스트: [등록](docs/verification/add.txt), [풀이](docs/verification/play.txt), [점수](docs/verification/score.txt), [재실행](docs/verification/reload.txt).
 
+#### 어떤 파일을 실행하고 촬영했는가
+
+| 파일 | 역할 |
+| --- | --- |
+| [`main.py`](main.py) | 실제 콘솔 게임. 직접 입력하며 플레이할 때 실행 |
+| [`verify.py`](docs/verification/verify.py) | 동일 게임 코드를 임시 폴더에서 실행하고 입력값을 주입해 검증. 출력과 입력값을 로그로 저장 |
+| [`view_log.py`](docs/verification/view_log.py) | 저장된 UTF-8 로그를 `tkinter` 읽기 전용 창으로 표시 |
+| `add.txt` | 퀴즈 등록과 잘못된 입력 재입력 로그 |
+| `play.txt` | 마지막 문제 풀이와 최종 결과 발췌 |
+| `score.txt` | 다시 실행한 뒤 최고 점수를 조회한 로그 |
+| `reload.txt` | 다시 실행한 뒤 목록과 점수를 확인한 로그 |
+| `results.json` | 검증 항목별 통과 여부 |
+
+보완 촬영에는 `main.py`의 실제 실행 결과를 저장한 위 텍스트 파일을 사용했다. `view_log.py`는 `Path.read_text()`로 파일을 읽고, `tkinter`의 `Text` 위젯에 표시한 뒤 `state="disabled"`로 편집을 막고 `mainloop()`로 창을 유지한다. 화면의 선택 강조 없이 촬영했다. 저장소에 포함한 뷰어에는 긴 로그를 끝까지 볼 수 있도록 가로·세로 스크롤바도 추가했다.
+
+#### 로그 창 여는 방법
+
+1. VS Code에서 **`Codyssey_mission2` 프로젝트 폴더**를 연다.
+2. **터미널 → 새 터미널**을 선택한다. 아래 명령은 `main.py`와 `README.md`가 있는 프로젝트 루트에서 실행한다.
+3. 보고 싶은 로그에 해당하는 명령 하나를 실행한다.
+
+```powershell
+# 퀴즈 등록 로그
+py docs/verification/view_log.py docs/verification/add.txt
+
+# 마지막 문제와 풀이 결과
+py docs/verification/view_log.py docs/verification/play.txt
+
+# 최고 점수 조회
+py docs/verification/view_log.py docs/verification/score.txt
+
+# 재실행 후 저장 데이터 확인
+py docs/verification/view_log.py docs/verification/reload.txt
+```
+
+창이 열리면 스크롤로 내용을 확인하고 오른쪽 위 닫기 버튼으로 종료한다. 환경에 따라 맨 앞의 `py`를 `python` 또는 `python3`로 바꾼다. `tkinter`가 포함된 Python과 그래픽 화면을 사용할 수 있는 환경이 필요하며, 표준 Windows Python 환경에서는 별도 pip 패키지가 필요 없다. `No module named tkinter` 오류가 나오면 Python 설치 구성에서 Tcl/Tk 지원을 확인한다.
+
+위 명령은 **기존 로그를 보여줄 뿐 게임을 새로 실행하거나 점수를 변경하지 않는다.** 실제로 직접 게임을 하려면 `py main.py`를 실행한다.
+
+#### 로그를 새로 생성하는 방법
+
+같은 프로젝트 루트에서 검증 코드를 먼저 실행한다.
+
+```powershell
+py docs/verification/verify.py
+```
+
+검증은 게임 코드를 임시 폴더에 복사해 수행하며 원본 `state.json`은 유지한다. 실행하면 `docs/verification` 안의 네 로그 파일과 `results.json`을 새 결과로 덮어쓴다. 이후 위 `view_log.py` 명령으로 새 로그를 열 수 있다. 텍스트 로그를 재생성해도 `docs/screenshots`의 이미지는 자동 갱신되지 않으므로, 새 결과를 이미지로 남기려면 창을 다시 촬영해야 한다.
+
 ### 13. 저장소 clone 및 pull 실습
 
 **진행:** 별도 `Codyssey_mission2_clone` 폴더에 복제하고 README를 수정해 커밋·푸시했다. 기존 폴더에서 원격 변경을 가져와 반영을 확인했다.
@@ -223,7 +272,14 @@ py main.py
 Codyssey_mission2/
 ├── docs/
 │   ├── screenshots/       # 개발 화면과 보완 실행 로그 이미지
-│   └── verification/      # 검증 코드, 결과, 실행 로그
+│   └── verification/
+│       ├── verify.py      # 임시 폴더에서 게임 검증 및 로그 생성
+│       ├── view_log.py    # 저장된 로그를 읽기 전용 창으로 표시
+│       ├── results.json   # 검증 항목별 결과
+│       ├── add.txt        # 등록 로그
+│       ├── play.txt       # 마지막 문제와 결과 발췌
+│       ├── score.txt      # 최고 점수 조회 로그
+│       └── reload.txt     # 재실행 후 조회 로그
 ├── .gitignore
 ├── README.md
 ├── main.py                # Quiz, QuizGame, 입력·출력 및 실행 함수
