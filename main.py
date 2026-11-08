@@ -122,6 +122,39 @@ def play_quizzes(quizzes):
     print(f"점수: {score:.0f}점")
     print("========================================")
 
+def read_non_empty_text(prompt):
+    while True:
+        text = input(prompt).strip()
+
+        if text:
+            return text
+
+        print("내용을 입력해주세요.")
+
+def add_quiz(quizzes):
+    print("\n새로운 퀴즈를 추가합니다.")
+
+    question = read_non_empty_text("문제: ")
+
+    choices = []
+
+    for number in range(1, 5):
+        choice = read_non_empty_text(f"선택지 {number}: ")
+        choices.append(choice)
+
+    answer = read_answer()
+
+    quiz = Quiz(
+        question=question,
+        choices=choices,
+        answer=answer,
+    )
+
+    quizzes.append(quiz)
+
+    print("퀴즈가 추가되었습니다!")
+    print(f"현재 등록된 퀴즈: {len(quizzes)}개")
+
 def main():
     quizzes = create_default_quizzes()
 
@@ -132,7 +165,7 @@ def main():
         if choice == 1:
             play_quizzes(quizzes)
         elif choice == 2:
-            print("퀴즈 추가 기능은 다음 단계에서 구현합니다.")
+            add_quiz(quizzes)
         elif choice == 3:
             print("퀴즈 목록 기능은 다음 단계에서 구현합니다.")
         elif choice == 4:
