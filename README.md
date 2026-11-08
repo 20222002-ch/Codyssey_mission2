@@ -4,7 +4,7 @@
 
 Python 기본 문법, 클래스, JSON 파일 입출력과 Git을 학습하기 위해 만든 콘솔 퀴즈 게임이다. 터미널에서 번호를 선택해 퀴즈를 풀거나 추가하고, 목록과 최고 점수를 확인한다. 추가한 문제와 최고 기록은 재실행 후에도 유지된다.
 
-완성된 기능뿐 아니라 **메뉴부터 기능을 하나씩 구현하고, 확인하고, 커밋한 과정**을 미션 요구사항 순서대로 기록했다. 보너스 기능은 아직 구현하지 않았으며 이 문서는 필수 기능 기준이다.
+완성된 기능뿐 아니라 **메뉴부터 기능을 하나씩 구현하고, 확인하고, 커밋한 과정**을 미션 요구사항 순서대로 기록했다. 필수 기능을 완성한 뒤 별도 브랜치에서 보너스 5가지도 구현했다. 1~13단계와 기존 이미지는 필수 기능 개발 당시의 기록으로 보존하고, 이후 변경은 아래 **보너스 과제 개발 과정**에 구분해 기록했다.
 
 ## 퀴즈 주제와 선정 이유
 
@@ -18,7 +18,7 @@ Python 기본 문법, 클래스, JSON 파일 입출력과 Git을 학습하기 �
 | 편집기 | Visual Studio Code |
 | Python | 3.14.5 — 미션 기준은 3.10 이상 |
 | Git | 2.51.2.windows.1 |
-| 라이브러리 | 표준 라이브러리 `json`, `pathlib` |
+| 라이브러리 | 표준 라이브러리 `json`, `pathlib`, `random`, `datetime` |
 
 ![Python 버전](docs/screenshots/python-version.png)
 ![Git 버전](docs/screenshots/git-version.png)
@@ -141,7 +141,7 @@ py docs/verification/view_log.py docs/verification/reload.txt
 
 ### 11. 전체 기능 및 예외 처리 검증
 
-기존 개발 화면을 확인하고, 문서 정리 시 동일 `main.py`를 임시 폴더에 복사해 추가 검증했다. 입력과 `KeyboardInterrupt`·`EOFError`는 검증 코드에서 주입했다. **31개 확인 항목이 통과**했으며 원본 `state.json`의 SHA-256이 유지된 것도 확인했다. 추가 검증에서 수정이 필요한 기능 오류는 발견되지 않았다.
+필수 기능 완성 당시 기존 개발 화면을 확인하고, 동일 `main.py`를 임시 폴더에 복사해 검증했다. 입력과 `KeyboardInterrupt`·`EOFError`는 검증 코드에서 주입했다. 당시 **31개 확인 항목이 통과**했으며 결과는 [`results-required-v1.json`](docs/verification/results-required-v1.json)에 보존했다. 이후 보너스 구현에 맞춰 검증 코드를 확장했다. 현재 검증 결과는 아래 보너스 절과 `results.json`을 기준으로 한다.
 
 | 검증 항목 | 결과 |
 | --- | --- |
@@ -156,7 +156,7 @@ py docs/verification/view_log.py docs/verification/reload.txt
 | 쓰기 오류 안내 및 원인 제거 후 재저장 | 통과 |
 | 빈 목록 처리와 스크립트 기준 저장 경로 | 통과 |
 
-검증 코드: [`verify.py`](docs/verification/verify.py), 세부 결과: [`results.json`](docs/verification/results.json). 다음 명령으로 임시 폴더에서 재검증할 수 있다. 원래 게임 데이터는 변경하지 않는다.
+현재 검증 실행기: [`verify.py`](docs/verification/verify.py), 테스트: [`test_bonus.py`](docs/verification/test_bonus.py), 세부 결과: [`results.json`](docs/verification/results.json). 다음 명령으로 임시 폴더에서 재검증할 수 있다. 원래 게임 데이터는 변경하지 않는다.
 
 ```powershell
 py docs/verification/verify.py
@@ -179,7 +179,7 @@ py docs/verification/verify.py
 | 파일 | 역할 |
 | --- | --- |
 | [`main.py`](main.py) | 실제 콘솔 게임. 직접 입력하며 플레이할 때 실행 |
-| [`verify.py`](docs/verification/verify.py) | 동일 게임 코드를 임시 폴더에서 실행하고 입력값을 주입해 검증. 출력과 입력값을 로그로 저장 |
+| [`verify.py`](docs/verification/verify.py) | 현재 게임 코드를 임시 폴더에서 검증하고 `bonus-*.txt` 실행 로그를 생성 |
 | [`view_log.py`](docs/verification/view_log.py) | 저장된 UTF-8 로그를 `tkinter` 읽기 전용 창으로 표시 |
 | `add.txt` | 퀴즈 등록과 잘못된 입력 재입력 로그 |
 | `play.txt` | 마지막 문제 풀이와 최종 결과 발췌 |
@@ -221,7 +221,7 @@ py docs/verification/view_log.py docs/verification/reload.txt
 py docs/verification/verify.py
 ```
 
-검증은 게임 코드를 임시 폴더에 복사해 수행하며 원본 `state.json`은 유지한다. 실행하면 `docs/verification` 안의 네 로그 파일과 `results.json`을 새 결과로 덮어쓴다. 이후 위 `view_log.py` 명령으로 새 로그를 열 수 있다. 텍스트 로그를 재생성해도 `docs/screenshots`의 이미지는 자동 갱신되지 않으므로, 새 결과를 이미지로 남기려면 창을 다시 촬영해야 한다.
+검증은 게임 코드를 임시 폴더에 복사해 수행하며 원본 `state.json`은 유지한다. 현재 실행기는 `docs/verification`의 `bonus-play.txt`, `bonus-history.txt`, `bonus-add.txt`, `bonus-delete.txt`, `bonus-reload.txt`와 `results.json`을 새 결과로 덮어쓴다. 기존 네 로그(`add.txt` 등)는 필수 기능 당시 기록으로 보존한다. 새 로그는 아래 보너스 절의 명령으로 연다. 텍스트를 재생성해도 스크린샷은 자동 갱신되지 않으므로 새 결과는 다시 촬영해야 한다.
 
 ### 13. 저장소 clone 및 pull 실습
 
@@ -278,19 +278,23 @@ cd Codyssey_mission2
 py main.py
 ```
 
-환경에 따라 `python main.py` 또는 `python3 main.py`를 사용한다. 번호로 메뉴를 선택하고 5번으로 종료한다. `state.json`이 있으면 저장 데이터를, 없으면 기본 5문제를 사용한다.
+환경에 따라 `python main.py` 또는 `python3 main.py`를 사용한다. 번호로 메뉴를 선택하고 5번으로 종료한다. `state.json`이 있으면 저장 데이터를, 없으면 기본 5문제를 사용한다. 기존 저장 파일은 삭제할 필요가 없다.
+
+퀴즈 풀기를 선택하면 풀 문제 수를 입력한다. `0`은 시작 취소이며, 출제 중 `h`로 힌트를 볼 수 있다. 6번은 삭제, 7번은 게임 기록 조회다.
 
 ## 기능 목록
 
 | 메뉴 | 기능 |
 | --- | --- |
-| 1. 퀴즈 풀기 | 전체 문제 순서대로 출제, 정답·오답 및 결과 안내 |
-| 2. 퀴즈 추가 | 문제·선택지 4개·정답 번호 입력 후 저장 |
+| 1. 퀴즈 풀기 | 문제 수 선택 후 중복 없이 랜덤 출제, 힌트 및 결과 안내 |
+| 2. 퀴즈 추가 | 문제·선택지 4개·정답 번호·선택적 힌트 입력 후 저장 |
 | 3. 퀴즈 목록 | 등록된 문제 수와 제목 조회 |
 | 4. 점수 확인 | 최고 점수와 당시 정답 수·문제 수 조회 |
 | 5. 종료 | 현재 데이터 저장 시도 후 종료 |
+| 6. 퀴즈 삭제 | 문제 선택과 y/n 확인 후 삭제·저장, 0으로 취소 |
+| 7. 점수 히스토리 | 모든 완료 게임의 날짜·시간·문제 수·정답 수·점수·힌트 사용을 최신순 조회 |
 
-잘못된 입력, 빈 목록, 파일 누락·손상, 읽기·쓰기 오류와 입력 중단을 처리한다. 랜덤 출제, 문제 수 선택, 힌트, 삭제, 점수 히스토리는 이후 보너스 과제 범위다.
+잘못된 입력, 빈 목록, 파일 누락·손상, 읽기·쓰기 오류와 입력 중단을 처리한다. 랜덤 출제·문제 수 선택·힌트·삭제·점수 히스토리 보너스 5가지를 모두 제공한다.
 
 ## 파일 구조
 
@@ -300,8 +304,11 @@ Codyssey_mission2/
 │   ├── screenshots/       # 개발 화면과 보완 실행 로그 이미지
 │   └── verification/
 │       ├── verify.py      # 임시 폴더에서 게임 검증 및 로그 생성
+│       ├── test_bonus.py  # 기존 기능 및 보너스 회귀 테스트
 │       ├── view_log.py    # 저장된 로그를 읽기 전용 창으로 표시
 │       ├── results.json   # 검증 항목별 결과
+│       ├── results-required-v1.json # 필수 기능 당시 31개 검증 결과
+│       ├── bonus-*.txt    # 현재 보너스 기능 실행 로그 5개
 │       ├── add.txt        # 등록 로그
 │       ├── play.txt       # 마지막 문제와 결과 발췌
 │       ├── score.txt      # 최고 점수 조회 로그
@@ -328,9 +335,13 @@ Codyssey_mission2/
 | `choices` | 비어 있지 않은 선택지 문자열 4개 |
 | `answer` | 1~4의 정수 정답 번호 |
 | `best_score` | 미플레이는 `null`, 완료 기록은 아래 객체 |
-| `score` | 정답 수 ÷ 문제 수 × 100, 소수점 둘째 자리까지 반올림 |
+| `hint` | 선택적 힌트 문자열. 빈 문자열이면 힌트 없음 |
+| `score` | 정답 비율 × 100 - 힌트 사용 문제 수 × 10, 최소 0점, 소수점 둘째 자리 반올림 |
 | `correct_count` | 최고 기록의 정답 수 |
 | `total` | 최고 기록의 전체 문제 수 |
+| `hints_used` | 해당 게임에서 힌트를 사용한 문제 수 |
+| `history` | 완료한 모든 게임 기록의 목록 |
+| `played_at` | 히스토리의 실행 컴퓨터 현지 시각. 시간대가 포함된 ISO 8601 문자열 |
 
 필드 구조 예시이며 실제 파일에는 전체 문제가 들어간다.
 
@@ -340,11 +351,91 @@ Codyssey_mission2/
     {
       "question": "Python에서 문자열을 나타내는 자료형은?",
       "choices": ["int", "str", "bool", "list"],
-      "answer": 2
+      "answer": 2,
+      "hint": "string의 약자입니다."
     }
   ],
-  "best_score": {"score": 100.0, "correct_count": 1, "total": 1}
+  "best_score": {"score": 90.0, "correct_count": 1, "total": 1, "hints_used": 1},
+  "history": [
+    {"score": 90.0, "correct_count": 1, "total": 1, "hints_used": 1, "played_at": "2026-11-08T20:00:00+09:00"}
+  ]
 }
 ```
 
 파일이 없거나 손상되면 기본 5문제와 미플레이 상태로 시작한다. 저장 실패 시 안내하고 실행 중 데이터는 메모리에 유지한다. 등록 도중 취소한 문제와 미완료 게임 결과는 기록에 반영하지 않는다.
+
+**기존 파일 호환:** `history`가 없으면 빈 목록, 기록에 `hints_used`가 없으면 0으로 읽는다. 퀴즈의 `hint`가 누락되면 기본 문제는 문제 문장이 일치하는 기본 힌트로 보완하고 사용자 문제는 힌트 없이 읽는다. 사용자가 명시적으로 저장한 빈 힌트는 유지한다. 예전 최고 점수는 보존하며 날짜를 알 수 없는 예전 기록을 히스토리로 만들어 넣지는 않는다. 실제 저장은 다음 등록·완료·종료 시 새 구조로 이루어진다.
+
+## 보너스 과제 개발 과정
+
+필수 개발 기록을 유지하기 위해 `codex/bonus-features` 브랜치에서 기능별로 작업했다. 원래 `state.json`을 덮어쓰지 않고 임시 폴더에서 기존 형식과 새 형식을 모두 검증했다.
+
+### B1. 랜덤 출제와 문제 수 선택
+
+**구현:** 퀴즈가 있으면 1~전체 문제 수를 선택하고 `random.sample(quizzes, total)`로 중복 없이 뽑는다. 0은 취소다. 빈 입력·문자·음수·범위 초과를 재입력하게 했다. 기능 커밋: [`55ecf60`](https://github.com/20222002-ch/Codyssey_mission2/commit/55ecf60).
+
+**고려와 해결:** 원본 목록을 직접 섞으면 목록 순서와 삭제 번호도 달라진다. 별도 표본 리스트를 사용해 원본은 유지했다. 무작위 기능을 검증할 때는 특정 출제 순서를 지정한 테스트와 실제 `random.sample`의 중복 없는 표본 테스트를 나눴다. 실행 로그 생성에만 seed 17을 사용하며 실제 게임은 seed를 고정하지 않는다.
+
+### B2. 힌트와 감점
+
+**구현:** `Quiz.hint`를 추가하고 등록 시 Enter로 생략할 수 있게 했다. 풀이 중 `h` 또는 `H`로 조회한다. 힌트를 사용한 문제마다 최종 점수에서 10점을 차감하고 0점 미만으로 내려가지 않는다. 같은 문제에서 반복 조회해도 한 번만 차감하며, 힌트가 없는 문제는 차감하지 않는다. 기능 커밋: [`14d89ae`](https://github.com/20222002-ch/Codyssey_mission2/commit/14d89ae).
+
+**고려와 해결:** 기존 최고 기록 검증은 정답 비율만 계산했기 때문에 감점된 기록을 손상 데이터로 처리할 수 있었다. 저장·불러오기와 점수 계산이 같은 `calculate_score()`를 사용하도록 바꾸고 `hints_used`를 함께 저장했다. 예전 기록은 힌트 0회로 해석한다.
+
+**확인:** 3문제 전부 정답에 힌트 1회면 90점, 같은 힌트를 두 번 확인해도 90점이다. 오답과 힌트 감점이 겹쳐도 최소 0점이다. 아래 화면은 문제 수 입력 검증과 첫 문제의 반복 힌트 확인 부분이다. 스크롤하면 최종 90점 결과까지 볼 수 있다.
+
+```powershell
+py docs/verification/view_log.py docs/verification/bonus-play.txt
+```
+
+![문제 수 선택과 힌트 반복 조회 로그](docs/screenshots/bonus-play.jpg)
+
+### B3. 퀴즈 삭제
+
+**구현:** 메뉴 6번에서 목록과 문제 번호를 보여주고 `y/n`으로 다시 확인한다. 0 또는 n은 취소하며 y일 때만 삭제하고 저장한다. 마지막 문제를 삭제한 빈 목록도 다시 실행했을 때 유지한다. 기능 커밋: [`73c2efe`](https://github.com/20222002-ch/Codyssey_mission2/commit/73c2efe).
+
+**고려와 해결:** 메모리에서만 지워진 뒤 저장에 실패하면 재실행 결과가 달라진다. 저장 실패 시 같은 객체를 원래 인덱스에 다시 넣고 삭제 취소를 안내하도록 했다. 이미 완료한 점수와 히스토리는 과거 기록이므로 문제 삭제 후에도 보존한다.
+
+```powershell
+py docs/verification/view_log.py docs/verification/bonus-delete.txt
+```
+
+![문제 선택과 삭제 확인 및 저장 로그](docs/screenshots/bonus-delete.jpg)
+
+### B4. 점수 히스토리
+
+**구현:** 게임을 끝까지 완료할 때마다 `history`에 결과와 `datetime.now().astimezone().isoformat()` 날짜를 추가한다. 메뉴 7번은 최신순으로 날짜·시간대, 문제 수, 정답 수, 점수, 힌트 횟수를 표시한다. 새 최고 점수가 아닌 게임도 남긴다. 기능 커밋: [`73c2efe`](https://github.com/20222002-ch/Codyssey_mission2/commit/73c2efe).
+
+**고려와 해결:** 취소하거나 중단한 게임을 기록하지 않도록 결과를 받은 뒤에만 추가한다. 과거 기록의 문제 수를 현재 목록 개수와 비교하지 않아 문제 삭제 후에도 유효하게 불러온다. 시간대 없는 날짜나 잘못된 점수·힌트 횟수는 검증에서 거른다.
+
+```powershell
+py docs/verification/view_log.py docs/verification/bonus-history.txt
+```
+
+![재실행 후 날짜와 점수 히스토리 조회 로그](docs/screenshots/bonus-history.jpg)
+
+힌트 포함 문제 등록과 삭제 후 재실행도 로그로 확인할 수 있다.
+
+```powershell
+py docs/verification/view_log.py docs/verification/bonus-add.txt
+py docs/verification/view_log.py docs/verification/bonus-reload.txt
+```
+
+### B5. 회귀 검증과 재현
+
+[`test_bonus.py`](docs/verification/test_bonus.py)의 **40개 테스트가 통과**했다. `results.json`에는 40개 테스트 결과와 원본 데이터 보존 확인 1개를 별도로 기록한다. 테스트 안의 여러 입력 조합은 subtest로 확인한다.
+
+- 랜덤 표본 크기·중복·순서와 원본 목록 보존
+- 문제 수 취소·잘못된 입력, 힌트 반복·없음·감점 하한
+- 힌트 포함 등록과 구형 저장 파일의 최고 기록·사용자 문제 보존
+- 최고 점수 갱신·동점·낮은 점수 유지와 모든 완료 게임 기록
+- 삭제 확인·취소·저장 실패 복원·마지막 문제 삭제 후 재실행
+- 메뉴·문제 수·풀이·등록·삭제 확인 도중 Ctrl+C·EOF에 해당하는 예외
+- 손상 데이터·파일 읽기·쓰기 오류와 재저장
+- 실제 Python 프로세스에서 게임·힌트·히스토리·재실행 및 EOF 종료
+
+```powershell
+py docs/verification/verify.py
+```
+
+검증 결과와 보너스 로그는 재생성되며 현재 게임 데이터는 변경하지 않는다. 새 보너스 이미지 3장은 기존과 같은 읽기 전용 로그 창을 촬영했다. 필수 기능 당시 스크린샷·로그는 개발 이력으로 유지하며 현재 화면과 메뉴·프롬프트가 다를 수 있다.

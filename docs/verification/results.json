@@ -1,126 +1,166 @@
 [
   {
-    "name": "Quiz display and correct/wrong answers",
+    "name": "test_add_and_restart_with_hint",
     "result": "PASS"
   },
   {
-    "name": "Default quizzes: five, four choices, valid answer",
+    "name": "test_cancelled_start_adds_no_history",
     "result": "PASS"
   },
   {
-    "name": "Menu: blank, spaces, text, out of range, trimmed valid",
+    "name": "test_corrupt_files_recover",
     "result": "PASS"
   },
   {
-    "name": "Answer: blank, spaces, text, out of range, trimmed valid",
+    "name": "test_count_cancel_has_no_result",
     "result": "PASS"
   },
   {
-    "name": "Text: blank and spaces rejected",
+    "name": "test_count_validation",
     "result": "PASS"
   },
   {
-    "name": "Empty play returns None",
+    "name": "test_default_quizzes",
     "result": "PASS"
   },
   {
-    "name": "Empty list is handled",
+    "name": "test_delete_cancel_and_invalid_confirmation",
     "result": "PASS"
   },
   {
-    "name": "Missing file uses defaults and saves on exit",
+    "name": "test_delete_confirm_and_restart",
     "result": "PASS"
   },
   {
-    "name": "No completed game message",
+    "name": "test_delete_count_validation",
     "result": "PASS"
   },
   {
-    "name": "Add quiz with invalid input and save",
+    "name": "test_delete_failure_restores_same_object_and_order",
     "result": "PASS"
   },
   {
-    "name": "Added quiz survives restart and appears in list",
+    "name": "test_delete_keeps_historical_score_and_count",
     "result": "PASS"
   },
   {
-    "name": "Play six quizzes and calculate score",
+    "name": "test_delete_last_preserves_empty_list_on_reload",
     "result": "PASS"
   },
   {
-    "name": "Best score survives restart",
+    "name": "test_empty_play_and_list",
     "result": "PASS"
   },
   {
-    "name": "Zero score is completed record",
+    "name": "test_hint_penalty_and_history_survive_restart",
     "result": "PASS"
   },
   {
-    "name": "Higher score replaces best",
+    "name": "test_hint_repeated_once_and_case_insensitive",
     "result": "PASS"
   },
   {
-    "name": "Lower score preserves best",
+    "name": "test_hint_scoring_and_zero_floor",
     "result": "PASS"
   },
   {
-    "name": "Equal score preserves best",
+    "name": "test_history_dates_rejected_when_missing_or_naive",
     "result": "PASS"
   },
   {
-    "name": "Menu Ctrl+C saves without incomplete data",
+    "name": "test_history_shows_latest_first",
     "result": "PASS"
   },
   {
-    "name": "Play Ctrl+C saves without incomplete data",
+    "name": "test_interrupts_and_eof_preserve_completed_state",
     "result": "PASS"
   },
   {
-    "name": "Add Ctrl+C saves without incomplete data",
+    "name": "test_invalid_quiz_fields_rejected",
     "result": "PASS"
   },
   {
-    "name": "Menu EOF saves without incomplete data",
+    "name": "test_invalid_record_fields_rejected",
     "result": "PASS"
   },
   {
-    "name": "Play EOF saves without incomplete data",
+    "name": "test_menu_validation_and_bonus_numbers",
     "result": "PASS"
   },
   {
-    "name": "Add EOF saves without incomplete data",
+    "name": "test_missing_file_and_exit_save",
     "result": "PASS"
   },
   {
-    "name": "Malformed JSON resets safely",
+    "name": "test_missing_hint_is_free",
     "result": "PASS"
   },
   {
-    "name": "Wrong quizzes type resets safely",
+    "name": "test_non_utf8_file_recovers",
     "result": "PASS"
   },
   {
-    "name": "Invalid choices resets safely",
+    "name": "test_old_save_with_score_migrates_without_loss",
     "result": "PASS"
   },
   {
-    "name": "Invalid score resets safely",
+    "name": "test_optional_hint_may_be_empty",
     "result": "PASS"
   },
   {
-    "name": "Write error is reported without crash",
+    "name": "test_play_answer_validation",
     "result": "PASS"
   },
   {
-    "name": "Saving recovers after write error removed",
+    "name": "test_play_counts_hinted_questions",
     "result": "PASS"
   },
   {
-    "name": "Path is based on script directory",
+    "name": "test_quiz_display_and_answers",
     "result": "PASS"
   },
   {
-    "name": "Original project state unchanged",
+    "name": "test_read_error_uses_defaults",
+    "result": "PASS"
+  },
+  {
+    "name": "test_real_process_bonus_game_and_restart",
+    "result": "PASS"
+  },
+  {
+    "name": "test_real_process_eof_saves",
+    "result": "PASS"
+  },
+  {
+    "name": "test_real_random_sample_has_no_duplicates",
+    "result": "PASS"
+  },
+  {
+    "name": "test_registration_answer_validation",
+    "result": "PASS"
+  },
+  {
+    "name": "test_sample_uses_selected_count_and_keeps_original_order",
+    "result": "PASS"
+  },
+  {
+    "name": "test_save_path_is_script_relative",
+    "result": "PASS"
+  },
+  {
+    "name": "test_text_validation",
+    "result": "PASS"
+  },
+  {
+    "name": "test_write_failure_does_not_destroy_saved_file",
+    "result": "PASS"
+  },
+  {
+    "name": "test_zero_higher_equal_and_lower_records",
+    "result": "PASS"
+  },
+  {
+    "name": "original_project_state_unchanged",
     "result": "PASS"
   }
 ]

@@ -1,0 +1,126 @@
+[
+  {
+    "name": "Quiz display and correct/wrong answers",
+    "result": "PASS"
+  },
+  {
+    "name": "Default quizzes: five, four choices, valid answer",
+    "result": "PASS"
+  },
+  {
+    "name": "Menu: blank, spaces, text, out of range, trimmed valid",
+    "result": "PASS"
+  },
+  {
+    "name": "Answer: blank, spaces, text, out of range, trimmed valid",
+    "result": "PASS"
+  },
+  {
+    "name": "Text: blank and spaces rejected",
+    "result": "PASS"
+  },
+  {
+    "name": "Empty play returns None",
+    "result": "PASS"
+  },
+  {
+    "name": "Empty list is handled",
+    "result": "PASS"
+  },
+  {
+    "name": "Missing file uses defaults and saves on exit",
+    "result": "PASS"
+  },
+  {
+    "name": "No completed game message",
+    "result": "PASS"
+  },
+  {
+    "name": "Add quiz with invalid input and save",
+    "result": "PASS"
+  },
+  {
+    "name": "Added quiz survives restart and appears in list",
+    "result": "PASS"
+  },
+  {
+    "name": "Play six quizzes and calculate score",
+    "result": "PASS"
+  },
+  {
+    "name": "Best score survives restart",
+    "result": "PASS"
+  },
+  {
+    "name": "Zero score is completed record",
+    "result": "PASS"
+  },
+  {
+    "name": "Higher score replaces best",
+    "result": "PASS"
+  },
+  {
+    "name": "Lower score preserves best",
+    "result": "PASS"
+  },
+  {
+    "name": "Equal score preserves best",
+    "result": "PASS"
+  },
+  {
+    "name": "Menu Ctrl+C saves without incomplete data",
+    "result": "PASS"
+  },
+  {
+    "name": "Play Ctrl+C saves without incomplete data",
+    "result": "PASS"
+  },
+  {
+    "name": "Add Ctrl+C saves without incomplete data",
+    "result": "PASS"
+  },
+  {
+    "name": "Menu EOF saves without incomplete data",
+    "result": "PASS"
+  },
+  {
+    "name": "Play EOF saves without incomplete data",
+    "result": "PASS"
+  },
+  {
+    "name": "Add EOF saves without incomplete data",
+    "result": "PASS"
+  },
+  {
+    "name": "Malformed JSON resets safely",
+    "result": "PASS"
+  },
+  {
+    "name": "Wrong quizzes type resets safely",
+    "result": "PASS"
+  },
+  {
+    "name": "Invalid choices resets safely",
+    "result": "PASS"
+  },
+  {
+    "name": "Invalid score resets safely",
+    "result": "PASS"
+  },
+  {
+    "name": "Write error is reported without crash",
+    "result": "PASS"
+  },
+  {
+    "name": "Saving recovers after write error removed",
+    "result": "PASS"
+  },
+  {
+    "name": "Path is based on script directory",
+    "result": "PASS"
+  },
+  {
+    "name": "Original project state unchanged",
+    "result": "PASS"
+  }
+]
