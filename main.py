@@ -1,4 +1,5 @@
 import json
+import random
 from pathlib import Path
 
 class Quiz:
@@ -95,17 +96,35 @@ def read_answer():
 
         print("1~4 사이의 번호를 선택해주세요.")
 
+def read_number(prompt, minimum, maximum):
+    while True:
+        text = input(prompt).strip()
+        try:
+            number = int(text)
+        except ValueError:
+            print(f"{minimum}~{maximum} 사이의 숫자를 입력해주세요.")
+            continue
+        if minimum <= number <= maximum:
+            return number
+        print(f"{minimum}~{maximum} 사이의 번호를 선택해주세요.")
+
+
 def play_quizzes(quizzes):
     if not quizzes:
         print("등록된 퀴즈가 없습니다.")
         return
 
+    total = read_number(f"풀 문제 수 (1~{len(quizzes)}, 0: 취소): ", 0, len(quizzes))
+    if total == 0:
+        print("퀴즈 시작을 취소했습니다.")
+        return
+
+    selected_quizzes = random.sample(quizzes, total)
     correct_count = 0
-    total = len(quizzes)
 
     print(f"\n퀴즈를 시작합니다! 총 {total}문제입니다.")
 
-    for number, quiz in enumerate(quizzes, start=1):
+    for number, quiz in enumerate(selected_quizzes, start=1):
         print("\n----------------------------------------")
         print(f"[문제 {number}]")
         quiz.display()
