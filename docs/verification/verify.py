@@ -109,8 +109,10 @@ with tempfile.TemporaryDirectory(prefix='mission2_check_') as folder:
         game = mod.QuizGame()
     check('Path is based on script directory', lambda: require(game.state_path == state))
 check('Original project state unchanged', lambda: require(hashlib.sha256((ROOT/'state.json').read_bytes()).hexdigest() == original_hash))
-(OUT/'verification.json').write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding='utf-8')
+for name in ('add', 'play', 'score', 'reload'):
+    log_path = OUT / (name + '.txt')
+    log_path.write_text('\n'.join(line.rstrip() for line in log_path.read_text(encoding='utf-8').splitlines()) + '\n', encoding='utf-8')
+(OUT/'results.json').write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding='utf-8')
 print(json.dumps(results, ensure_ascii=False, indent=2))
 if any(r['result'] != 'PASS' for r in results):
     raise SystemExit(1)
-
