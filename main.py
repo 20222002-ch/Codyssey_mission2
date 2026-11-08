@@ -115,12 +115,18 @@ def play_quizzes(quizzes):
         else:
             print(f"오답입니다. 정답은 {quiz.answer}번입니다.")
 
-    score = correct_count / total * 100
+    score = round(correct_count / total * 100, 2)
 
     print("\n========================================")
     print(f"결과: {total}문제 중 {correct_count}문제 정답!")
-    print(f"점수: {score:.0f}점")
+    print(f"점수: {score:g}점")
     print("========================================")
+
+    return {
+        "score": score,
+        "correct_count": correct_count,
+        "total": total,
+    }
 
 def read_non_empty_text(prompt):
     while True:
@@ -168,21 +174,46 @@ def show_quiz_list(quizzes):
 
     print("----------------------------------------")
 
+def show_best_score(best_score):
+    if best_score is None:
+        print("\n아직 퀴즈를 완료한 기록이 없습니다.")
+        return
+
+    score = best_score["score"]
+    correct_count = best_score["correct_count"]
+    total = best_score["total"]
+
+    print(f"\n최고 점수: {score:g}점")
+    print(f"기록: {total}문제 중 {correct_count}문제 정답")
+
 def main():
     quizzes = create_default_quizzes()
+    best_score = None
 
     while True:
         show_menu()
         choice = read_menu_choice()
 
         if choice == 1:
-            play_quizzes(quizzes)
+            result = play_quizzes(quizzes)
+
+            if result is not None:
+                if (
+                    best_score is None
+                    or result["score"] > best_score["score"]
+                ):
+                    best_score = result
+                    print("새로운 최고 점수입니다!")
+
         elif choice == 2:
             add_quiz(quizzes)
+
         elif choice == 3:
             show_quiz_list(quizzes)
+
         elif choice == 4:
-            print("점수 확인 기능은 다음 단계에서 구현합니다.")
+            show_best_score(best_score)
+
         elif choice == 5:
             print("퀴즈 게임을 종료합니다.")
             break
