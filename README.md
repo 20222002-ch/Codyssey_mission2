@@ -61,6 +61,14 @@ Python 기본 문법, 클래스, JSON 파일 입출력과 Git을 학습하기 �
 
 **선택 이유와 확인:** `Quiz`의 출력·판별 메서드를 재사용하고 전체 진행은 함수로 분리했다. 빈 목록을 먼저 처리해 0으로 나누는 계산을 방지했다. `--no-ff`로 병합 기록을 남겨 아래 그래프에서 갈라졌다 합쳐지는 흐름을 확인했다.
 
+프로젝트 루트에서 다음 명령으로 아래 풀이 결과 로그 창을 연다.
+
+```powershell
+py docs/verification/view_log.py docs/verification/play.txt
+```
+
+![마지막 문제와 풀이 결과 실행 로그](docs/screenshots/play.jpg)
+
 ![브랜치 병합 당시 기록](docs/screenshots/branch-merge.png)
 
 ### 6. 퀴즈 추가 기능 구현
@@ -68,6 +76,12 @@ Python 기본 문법, 클래스, JSON 파일 입출력과 Git을 학습하기 �
 **진행:** 문제, 선택지 4개, 정답 번호를 받아 새 객체를 추가했다. `read_non_empty_text()`로 빈 문장을 막고 기존 `read_answer()`로 정답 범위를 검증했다. 커밋: [`91484e3`](https://github.com/20222002-ch/Codyssey_mission2/commit/91484e3).
 
 **선택 이유와 확인:** 모든 입력이 끝나야 등록해 입력 도중 취소된 문제가 남지 않도록 했다. 처음에는 실행 중 리스트에만 추가했고 10단계에서 저장을 연결했다. 최종 검증에서 빈 문제·선택지와 잘못된 정답 번호를 재입력한 뒤 6번째 문제가 등록되는 것을 확인했다.
+
+프로젝트 루트에서 다음 명령으로 아래 등록 로그 창을 연다.
+
+```powershell
+py docs/verification/view_log.py docs/verification/add.txt
+```
 
 ![등록과 입력 검증 실행 로그](docs/screenshots/add_quiz.jpg)
 
@@ -93,6 +107,12 @@ Python 기본 문법, 클래스, JSON 파일 입출력과 Git을 학습하기 �
 
 **확인:** 미플레이 안내, 0점 등록, 높은 점수 갱신, 낮거나 같은 점수에서 유지되는 동작을 검증했다. 이 단계의 메모리상 기록은 10단계에서 파일 저장과 연결했다.
 
+프로젝트 루트에서 다음 명령으로 아래 최고 점수 로그 창을 연다.
+
+```powershell
+py docs/verification/view_log.py docs/verification/score.txt
+```
+
 ![최고 점수 조회 실행 로그](docs/screenshots/score.jpg)
 
 ### 9. QuizGame 클래스로 구조 정리
@@ -110,6 +130,12 @@ Python 기본 문법, 클래스, JSON 파일 입출력과 Git을 학습하기 �
 **설계상 고려와 해결:** 누락·손상 파일은 기본 데이터로 시작하고, 검증을 모두 통과해야 불러온 상태를 적용한다. 저장은 `state.tmp`에 먼저 쓰고 교체한다. 읽기·쓰기 오류는 안내하고 종료 시 `finally`에서 저장을 시도한다. 손상 파일로 시작한 후 저장하면 기본 데이터로 덮어쓰므로 중요한 기록은 백업해야 한다.
 
 **확인:** 검증 폴더에서 6번째 문제와 83.33점 기록을 저장한 뒤 재실행해 복원했다. 파일 누락·손상·저장 실패 및 원인 제거 후 재저장도 확인했다.
+
+프로젝트 루트에서 다음 명령으로 아래 재실행 로그 창을 연다.
+
+```powershell
+py docs/verification/view_log.py docs/verification/reload.txt
+```
 
 ![재실행 후 문제 복원 실행 로그](docs/screenshots/reload.jpg)
 
