@@ -131,7 +131,7 @@ class QuizTests(unittest.TestCase):
         q = self.mod.Quiz("Q", ["a", "b", "c", "d"], 1, "Hint")
         result, output = self.call(lambda: self.mod.read_quiz_answer(q), [" H ", "h", "1"])
         self.assertEqual(result, (1, True))
-        self.assertEqual(output.count("최종 점수에서 10점 차감"), 1)
+        self.assertEqual(output.count("최종 점수에서 5점 차감"), 1)
         self.assertIn("추가 감점은 없습니다", output)
 
     def test_missing_hint_is_free(self):
@@ -146,16 +146,16 @@ class QuizTests(unittest.TestCase):
         self.assertEqual(result, (2, False))
 
     def test_hint_scoring_and_zero_floor(self):
-        self.assertEqual(self.mod.calculate_score(2, 3, 1), 56.67)
+        self.assertEqual(self.mod.calculate_score(2, 3, 1), 61.67)
         self.assertEqual(self.mod.calculate_score(0, 1, 1), 0)
-        self.assertEqual(self.mod.calculate_score(1, 1, 1), 90)
+        self.assertEqual(self.mod.calculate_score(1, 1, 1), 95)
         self.assertEqual(self.mod.calculate_score(2, 3), 66.67)
 
     def test_play_counts_hinted_questions(self):
         quizzes = self.mod.create_default_quizzes()
         with patch.object(self.mod.random, "sample", return_value=quizzes[:2]):
             result, _ = self.call(lambda: self.mod.play_quizzes(quizzes), ["2", "h", "h", "2", "h", "3"])
-        self.assertEqual(result, dict(score=80, correct_count=2, total=2, hints_used=2))
+        self.assertEqual(result, dict(score=90, correct_count=2, total=2, hints_used=2, hint_penalty=5))
 
     def test_missing_file_and_exit_save(self):
         output = self.run_session(["4", "7", "5"])
@@ -200,7 +200,7 @@ class QuizTests(unittest.TestCase):
         self.reset()
         self.run_session(["1", "1", "h", "h", "2", "5"])
         game = self.game()
-        self.assertEqual(game.best_score["score"], 90)
+        self.assertEqual(game.best_score["score"], 95)
         self.assertEqual(game.history[0]["hints_used"], 1)
         self.assertIsNotNone(datetime.fromisoformat(game.history[0]["played_at"]).utcoffset())
 
@@ -357,7 +357,7 @@ class QuizTests(unittest.TestCase):
         record = self.saved()["history"][0]
         self.assertEqual(record["total"], 1)
         self.assertEqual(record["hints_used"], 1)
-        self.assertLessEqual(record["score"], 90)
+        self.assertLessEqual(record["score"], 95)
         again = subprocess.run(
             [sys.executable, "-X", "utf8", str(self.program)],
             input="7\n5\n", text=True, encoding="utf-8",
@@ -374,6 +374,19 @@ class QuizTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertIn("입력이 종료되어", completed.stdout)
         self.assertEqual(len(self.saved()["quizzes"]), 5)
+
+    def test_old_ten_point_records_and_new_five_point_records_coexist(self):
+        old = dict(score=90, correct_count=1, total=1, hints_used=1)
+        data = copy.deepcopy(self.defaults)
+        data["best_score"] = old.copy()
+        data["history"] = [{**old, "played_at": "2026-11-08T20:00:00+09:00"}]
+        self.reset(data)
+        self.run_session(["1", "1", "h", "2", "5"])
+        game = self.game()
+        self.assertEqual(game.best_score["score"], 95)
+        self.assertEqual(game.best_score["hint_penalty"], 5)
+        self.assertEqual([r["score"] for r in game.history], [90, 95])
+        self.assertEqual([r["hint_penalty"] for r in game.history], [10, 5])
 
 
 if __name__ == "__main__":

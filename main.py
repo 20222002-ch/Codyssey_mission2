@@ -3,11 +3,11 @@ import random
 from pathlib import Path
 from datetime import datetime
 
-HINT_PENALTY = 10
+HINT_PENALTY = 5
 
 
-def calculate_score(correct_count, total, hints_used=0):
-    return max(0, round(correct_count / total * 100 - hints_used * HINT_PENALTY, 2))
+def calculate_score(correct_count, total, hints_used=0, hint_penalty=HINT_PENALTY):
+    return max(0, round(correct_count / total * 100 - hints_used * hint_penalty, 2))
 
 
 class Quiz:
@@ -193,6 +193,7 @@ def play_quizzes(quizzes):
         "correct_count": correct_count,
         "total": total,
         "hints_used": hints_used,
+        "hint_penalty": HINT_PENALTY,
     }
 
 def read_non_empty_text(prompt):
@@ -323,6 +324,8 @@ class QuizGame:
         correct_count = record["correct_count"]
         total = record["total"]
         hints_used = record.get("hints_used", 0)
+        # Records written before the five-point rule used ten points per hint.
+        hint_penalty = record.get("hint_penalty", 10)
 
         if type(total) is not int or total < 1:
             raise ValueError("전체 문제 수가 올바르지 않습니다.")
@@ -332,10 +335,13 @@ class QuizGame:
             raise ValueError("점수가 올바르지 않습니다.")
         if type(hints_used) is not int or not 0 <= hints_used <= total:
             raise ValueError("힌트 사용 횟수가 올바르지 않습니다.")
-        if score != calculate_score(correct_count, total, hints_used):
+        if type(hint_penalty) is not int or hint_penalty not in (5, 10):
+            raise ValueError("힌트 감점 기준이 올바르지 않습니다.")
+        if score != calculate_score(correct_count, total, hints_used, hint_penalty):
             raise ValueError("점수와 정답 수가 일치하지 않습니다.")
 
-        parsed = dict(score=score, correct_count=correct_count, total=total, hints_used=hints_used)
+        parsed = dict(score=score, correct_count=correct_count, total=total,
+                      hints_used=hints_used, hint_penalty=hint_penalty)
         if require_date:
             played_at = record["played_at"]
             if not isinstance(played_at, str):

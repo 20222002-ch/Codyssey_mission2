@@ -104,6 +104,10 @@
     "result": "PASS"
   },
   {
+    "name": "test_old_ten_point_records_and_new_five_point_records_coexist",
+    "result": "PASS"
+  },
+  {
     "name": "test_optional_hint_may_be_empty",
     "result": "PASS"
   },

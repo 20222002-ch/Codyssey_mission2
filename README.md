@@ -336,10 +336,11 @@ Codyssey_mission2/
 | `answer` | 1~4의 정수 정답 번호 |
 | `best_score` | 미플레이는 `null`, 완료 기록은 아래 객체 |
 | `hint` | 선택적 힌트 문자열. 빈 문자열이면 힌트 없음 |
-| `score` | 정답 비율 × 100 - 힌트 사용 문제 수 × 10, 최소 0점, 소수점 둘째 자리 반올림 |
+| `score` | 정답 비율 × 100 - 힌트 사용 문제 수 × 해당 기록의 hint_penalty (현재 5), 최소 0점, 소수점 둘째 자리 반올림 |
 | `correct_count` | 최고 기록의 정답 수 |
 | `total` | 최고 기록의 전체 문제 수 |
 | `hints_used` | 해당 게임에서 힌트를 사용한 문제 수 |
+| `hint_penalty` | 해당 기록의 힌트 1회 감점. 현재 5점, 이전 기록은 10점 |
 | `history` | 완료한 모든 게임 기록의 목록 |
 | `played_at` | 히스토리의 실행 컴퓨터 현지 시각. 시간대가 포함된 ISO 8601 문자열 |
 
@@ -355,9 +356,9 @@ Codyssey_mission2/
       "hint": "string의 약자입니다."
     }
   ],
-  "best_score": {"score": 90.0, "correct_count": 1, "total": 1, "hints_used": 1},
+  "best_score": {"score": 95.0, "correct_count": 1, "total": 1, "hints_used": 1, "hint_penalty": 5},
   "history": [
-    {"score": 90.0, "correct_count": 1, "total": 1, "hints_used": 1, "played_at": "2026-11-08T20:00:00+09:00"}
+    {"score": 95.0, "correct_count": 1, "total": 1, "hints_used": 1, "hint_penalty": 5, "played_at": "2026-11-08T20:00:00+09:00"}
   ]
 }
 ```
@@ -378,11 +379,11 @@ Codyssey_mission2/
 
 ### B2. 힌트와 감점
 
-**구현:** `Quiz.hint`를 추가하고 등록 시 Enter로 생략할 수 있게 했다. 풀이 중 `h` 또는 `H`로 조회한다. 힌트를 사용한 문제마다 최종 점수에서 10점을 차감하고 0점 미만으로 내려가지 않는다. 같은 문제에서 반복 조회해도 한 번만 차감하며, 힌트가 없는 문제는 차감하지 않는다. 기능 커밋: [`14d89ae`](https://github.com/20222002-ch/Codyssey_mission2/commit/14d89ae).
+**구현:** `Quiz.hint`를 추가하고 등록 시 Enter로 생략할 수 있게 했다. 풀이 중 `h` 또는 `H`로 조회한다. 힌트를 사용한 문제마다 최종 점수에서 5점을 차감하고 0점 미만으로 내려가지 않는다. 같은 문제에서 반복 조회해도 한 번만 차감하며, 힌트가 없는 문제는 차감하지 않는다. 기능 커밋: [`14d89ae`](https://github.com/20222002-ch/Codyssey_mission2/commit/14d89ae).
 
-**고려와 해결:** 기존 최고 기록 검증은 정답 비율만 계산했기 때문에 감점된 기록을 손상 데이터로 처리할 수 있었다. 저장·불러오기와 점수 계산이 같은 `calculate_score()`를 사용하도록 바꾸고 `hints_used`를 함께 저장했다. 예전 기록은 힌트 0회로 해석한다.
+**고려와 해결:** 기존 최고 기록 검증은 정답 비율만 계산했기 때문에 감점된 기록을 손상 데이터로 처리할 수 있었다. 저장·불러오기와 점수 계산이 같은 `calculate_score()`를 사용하도록 바꾸고 `hints_used`를 함께 저장했다. 힌트 횟수가 없는 예전 기록은 0회로 해석한다. 이후 사용자 요청으로 감점을 10점에서 5점으로 줄였다. 새 기록은 `hint_penalty: 5`를 저장하고, 감점 필드가 없는 기존 보너스 기록은 10점 기준으로 읽어 원래 점수와 날짜를 보존한다. 과거 기록을 소급해서 다시 계산하지 않는다.
 
-**확인:** 3문제 전부 정답에 힌트 1회면 90점, 같은 힌트를 두 번 확인해도 90점이다. 오답과 힌트 감점이 겹쳐도 최소 0점이다. 아래 화면은 문제 수 입력 검증과 첫 문제의 반복 힌트 확인 부분이다. 스크롤하면 최종 90점 결과까지 볼 수 있다.
+**확인:** 3문제 전부 정답에 힌트 1회면 95점, 같은 힌트를 두 번 확인해도 95점이다. 오답과 힌트 감점이 겹쳐도 최소 0점이다. 아래 화면은 문제 수 입력 검증과 첫 문제의 반복 힌트 확인 부분이다. 스크롤하면 최종 95점 결과까지 볼 수 있다.
 
 ```powershell
 py docs/verification/view_log.py docs/verification/bonus-play.txt
@@ -423,7 +424,7 @@ py docs/verification/view_log.py docs/verification/bonus-reload.txt
 
 ### B5. 회귀 검증과 재현
 
-[`test_bonus.py`](docs/verification/test_bonus.py)의 **40개 테스트가 통과**했다. `results.json`에는 40개 테스트 결과와 원본 데이터 보존 확인 1개를 별도로 기록한다. 테스트 안의 여러 입력 조합은 subtest로 확인한다.
+[`test_bonus.py`](docs/verification/test_bonus.py)의 **41개 테스트가 통과**했다. `results.json`에는 41개 테스트 결과와 원본 데이터 보존 확인 1개를 별도로 기록한다. 테스트 안의 여러 입력 조합은 subtest로 확인한다.
 
 - 랜덤 표본 크기·중복·순서와 원본 목록 보존
 - 문제 수 취소·잘못된 입력, 힌트 반복·없음·감점 하한
